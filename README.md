@@ -1,37 +1,30 @@
-# Huawei AI Shell GLM-5.2 → OpenAI 兼容 API（Cloudflare Workers 全托管）
+# Huawei AI Shell GLM-5.2 → OpenAI 兼容 API
 
-把华为 AI Shell 容器内的 **glm-5.2** 模型能力，转换为标准的 **OpenAI Chat Completions 接口**。
-任意 OpenAI 兼容客户端（Codex / ChatBox / 自写脚本）改个 Base URL 即可使用 GLM-5.2。
+> 本项目仅供个人学习与使用。
 
-**管理面全部在 Cloudflare Workers 云端，本机零部署**：
+**把华为 AI Shell 容器内的 glm-5.2 模型能力，转换为标准的 OpenAI Chat Completions 接口！**
 
-- 可视化 WebUI 面板：填写 tunnel token / 公网域名 / API Key，随机生成 Key 一键复制；
-- 配置存 Cloudflare KV，部署脚本经 Worker 分发，容器状态心跳实时上报；
-- AI Shell 容器内只需执行**一行命令**，自动完成代理部署 + Cloudflare Tunnel 公网穿透。
+- **OpenAI 兼容** - 任意客户端（Codex / ChatBox / 自写脚本）改个 Base URL 即可使用 GLM-5.2
+- **全云端管理** - 管理面板托管于 Cloudflare Workers，本机零部署
+- **可视化面板** - WebUI 配置 tunnel token / 域名 / API Key，随机生成一键复制
+- **配置存 KV** - 部署脚本经 Worker 分发，容器状态心跳实时上报
+- **一行部署** - AI Shell 容器内执行一行命令，自动完成代理部署 + Cloudflare Tunnel 穿透
 
 ## 部署（一键）
 
-1. **上传仓库**：GitHub 建空仓库 → `git remote add origin <url> && git branch -M main && git push -u origin main`
-2. **配置 Secrets**（Settings → Secrets and variables → Actions）：
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/guowei21/HW-AI-Shell-GLM5.2)
 
-   | Secret | 说明 |
-   |---|---|
-   | `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（Workers Scripts Edit / KV Storage Edit） |
-   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 账户 ID |
-   | `CF_KV_NAMESPACE_ID` | 运行 `npx wrangler kv namespace create KV` 得到的 id |
-   | `ADMIN_KEY` | 面板登录密钥（自定，保密） |
+1. 点击上方按钮，登录 Cloudflare 账号；
+2. 选择账户，点击 **Deploy**；
+3. 按提示设置 `ADMIN_KEY`（面板登录密钥，自定义、保密）；
+4. 部署完成，打开面板 `https://aishell-admin.<ACCOUNT_ID>.workers.dev`。
 
-3. **自动部署**：push 到 main 后 GitHub Actions 自动执行——上传脚本到 KV → 部署 Worker → 设置 ADMIN_KEY。
-   部署完成访问 `https://aishell-admin.<ACCOUNT_ID>.workers.dev`。
-
-也可本地部署：`cd workers && npm i -D wrangler && npx wrangler secret put ADMIN_KEY && node sync-kv.mjs && npx wrangler deploy`
+> 也可本地部署：`cd workers && npm i -D wrangler && npx wrangler secret put ADMIN_KEY && node sync-kv.mjs && npx wrangler deploy`
 
 ## 使用
 
 1. 打开面板，输入 ADMIN_KEY 登录（会话 24h）；
-2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 可先在 Cloudflare Dashboard
-   手动创建隧道获取，或用仓库 `.github/workflows/tunnel-create.yml` 自动创建——需额外配置
-   `CF_API_TOKEN` + `GH_PAT` 两个 Secrets）；
+2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 在 Cloudflare Dashboard 手动创建隧道获取，或用 `.github/workflows/tunnel-create.yml` 自动创建）；
 3. 点"**随机生成**"API Key → 保存（存 KV）→ **复制**；
 4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
 
@@ -53,8 +46,7 @@ workers/
   src/deploy-remote.sh          # 容器端一键部署
   sync-kv.mjs                   # 上传脚本到 KV
   wrangler.toml / package.json
-.github/workflows/deploy.yml    # 一键部署（push 自动部署）
-.github/workflows/tunnel-create.yml  # 建隧道（可选）
+.github/workflows/              # GitHub Actions（可选：自动部署 / 建隧道）
 ```
 
 ## 安全

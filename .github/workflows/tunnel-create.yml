@@ -1,0 +1,63 @@
+name: Create Cloudflare Tunnel
+
+# 手动触发：GitHub → Actions → Create Cloudflare Tunnel → Run workflow
+# 输入目标域名后，自动建隧道并把 run token 写入 GitHub Secret: CF_TUNNEL_TOKEN
+#
+# 前提（在仓库 Settings → Secrets and variables → Actions 配置）：
+#   CF_API_TOKEN  —— Cloudflare API Token（权限：Account→Cloudflare Tunnel→Edit；Zone→DNS→Edit）
+#   GH_PAT        —— GitHub Personal Access Token（classic，权限 repo / workflow 即可），
+#                    用于把 run token 写入 Secret（普通 GITHUB_TOKEN 无 secrets 写权限）
+
+on:
+  workflow_dispatch:
+    inputs:
+      hostname:
+        description: '要绑定的公网域名，例如 aishell.example.com'
+        required: true
+        type: string
+      port:
+        description: '本地服务端口（默认 15173）'
+        required: false
+        default: '15173'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  create-tunnel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 建隧道（tunnel-create.sh）
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_HOSTNAME: ${{ inputs.hostname }}
+          PORT: ${{ inputs.port }}
+        run: |
+          bash tunnel-create.sh
+        shell: bash
+
+      - name: 把 run token 写入 GitHub Secret（CF_TUNNEL_TOKEN）
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        run: |
+          TOKEN_VALUE="$(cat keys/tunnel.token 2>/dev/null || true)"
+          if [[ -z "$TOKEN_VALUE" ]]; then
+            echo "::error::未找到 keys/tunnel.token，建隧道可能失败"
+            exit 1
+          fi
+          echo "$TOKEN_VALUE" | gh secret set CF_TUNNEL_TOKEN --repo "$GITHUB_REPOSITORY"
+          echo "✅ run token 已写入 Secret: CF_TUNNEL_TOKEN"
+          echo "（此 token 不会被写入仓库文件，仅存于 GitHub Secrets）"
+
+      - name: 输出结果
+        run: |
+          echo "=============================================="
+          echo "公网地址: https://${{ inputs.hostname }}"
+          echo "下一步：在部署环境执行 deploy-tunnel.sh"
+          echo "（会自动读取 Secret CF_TUNNEL_TOKEN，或本地 keys/tunnel.token）"
+          echo "=============================================="

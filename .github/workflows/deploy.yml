@@ -1,0 +1,67 @@
+name: Deploy Worker
+
+# 一键部署：push 到 main（或手动触发）→ 上传 KV → 部署 Worker → 设置 ADMIN_KEY
+#
+# 需要仓库 Secrets（Settings → Secrets and variables → Actions）：
+#   CLOUDFLARE_API_TOKEN   Cloudflare API Token（Workers Scripts Edit / KV Storage Edit）
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare 账户 ID
+#   CF_KV_NAMESPACE_ID     KV 命名空间 ID（npx wrangler kv namespace create KV 得到）
+#   ADMIN_KEY              面板登录密钥（自定，保密）
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install wrangler
+        working-directory: workers
+        run: npm i -D wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: 写入 KV namespace ID
+        working-directory: workers
+        run: |
+          sed -i "s/REPLACE_WITH_KV_NAMESPACE_ID/${{ secrets.CF_KV_NAMESPACE_ID }}/" wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: 上传脚本到 KV（admin.html / 代理源码 / 部署脚本）
+        working-directory: workers
+        run: node sync-kv.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: 部署 Worker
+        working-directory: workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: 设置 ADMIN_KEY secret
+        working-directory: workers
+        run: echo "${{ secrets.ADMIN_KEY }}" | npx wrangler secret put ADMIN_KEY
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: 健康检查
+        run: |
+          URL="$(curl -s https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts | \
+            grep -oE 'aishell-admin' | head -1)"
+          echo "部署完成，Worker: aishell-admin"
+          echo "面板: https://aishell-admin.${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.workers.dev"

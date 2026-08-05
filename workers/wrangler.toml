@@ -1,0 +1,10 @@
+name = "aishell-admin"
+main = "src/index.js"
+compatibility_date = "2025-12-01"
+
+# 建好后填入：npx wrangler kv namespace create KV
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# 管理密钥用 secret 设置：npx wrangler secret put ADMIN_KEY

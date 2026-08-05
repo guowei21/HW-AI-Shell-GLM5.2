@@ -1,0 +1,15 @@
+{
+  "name": "aishell-admin-workers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Shell 管理中枢（Cloudflare Workers 全托管）",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "node sync-kv.mjs && wrangler deploy",
+    "sync": "node sync-kv.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

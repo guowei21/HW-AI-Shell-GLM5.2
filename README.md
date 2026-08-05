@@ -8,7 +8,7 @@
 - **全云端管理** - 管理面板托管于 Cloudflare Workers，本机零部署
 - **可视化面板** - WebUI 配置 tunnel token / 域名 / API Key，随机生成一键复制
 - **配置存 KV** - 部署脚本经 Worker 分发，容器状态心跳实时上报
-- **一行部署** - AI Shell 容器内执行一行命令，自动完成代理部署 + Cloudflare Tunnel 穿透
+- **一键部署** - AI Shell 容器内执行一行命令，自动完成代理部署 + Cloudflare Tunnel 穿透
 
 ## 部署（一键）
 
@@ -24,7 +24,7 @@
 ## 使用
 
 1. 打开面板，输入 ADMIN_KEY 登录（会话 24h）；
-2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 在 Cloudflare Dashboard 手动创建隧道获取，或用 `.github/workflows/tunnel-create.yml` 自动创建）；
+2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 在 Cloudflare Dashboard 手动创建隧道获取）；
 3. 点"**随机生成**"API Key → 保存（存 KV）→ **复制**；
 4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
 
@@ -46,7 +46,6 @@ workers/
   src/deploy-remote.sh          # 容器端一键部署
   sync-kv.mjs                   # 上传脚本到 KV
   wrangler.toml / package.json
-.github/workflows/              # GitHub Actions（可选：自动部署 / 建隧道）
 ```
 
 ## 安全

@@ -47,7 +47,7 @@ export default {
 
     // 健康检查（无鉴权）
     if (path === '/api/health') {
-      return json({ ok: true, worker: 'aishell-admin', ts: Date.now() });
+      return json({ ok: true, worker: 'hw-ai-shell-glm5-2', ts: Date.now() });
     }
 
     // 登录：密钥 → 会话 token

@@ -18,6 +18,26 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const TOML = path.join(ROOT, 'wrangler.toml');
+const KV_PLACEHOLDER = 'REPLACE_WITH_KV_NAMESPACE_ID';
+
+// 若 wrangler.toml 中 KV namespace id 仍是占位符，自动创建并回填（本地/CI 均可，需已认证 wrangler）
+function ensureKV() {
+  let toml = readFileSync(TOML, 'utf8');
+  if (!toml.includes(KV_PLACEHOLDER)) return;
+  console.log('==> KV namespace id 为占位符，自动创建 KV namespace ...');
+  const out = execSync('npx wrangler kv namespace create KV', {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+  const m = out.match(/id\s*=\s*"([a-zA-Z0-9]{32})"/);
+  if (!m) throw new Error('无法解析 KV namespace id，输出: ' + out.slice(0, 300));
+  writeFileSync(TOML, toml.replace(KV_PLACEHOLDER, m[1]));
+  console.log(`==> 已创建 KV namespace: ${m[1]}，已写入 wrangler.toml`);
+}
+
+ensureKV();
+
 const files = {
   'page:admin.html': path.join(ROOT, 'src', 'admin.html'),
   'script:aishell-acp-openai-proxy.mjs': path.join(ROOT, 'aishell-acp-openai-proxy.mjs'),

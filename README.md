@@ -19,7 +19,7 @@
 1. 点击上方按钮，登录 Cloudflare 账号；
 2. 选择账户，点击 **Deploy**；
 3. 按提示设置 `ADMIN_KEY`（面板登录密钥，自定义、保密）；
-4. 部署完成，打开面板 `https://aishell-admin.<ACCOUNT_ID>.workers.dev`。
+4. 部署完成，打开面板 `https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev`。
 
 ## 使用
 
@@ -29,7 +29,7 @@
 4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
 
    ```bash
-   ADMIN_KEY='<你的ADMIN_KEY>' bash <(curl -fsSL https://aishell-admin.<ACCOUNT_ID>.workers.dev/scripts/deploy-remote.sh) https://aishell-admin.<ACCOUNT_ID>.workers.dev
+   ADMIN_KEY='<你的ADMIN_KEY>' bash <(curl -fsSL https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev/scripts/deploy-remote.sh) https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev
    ```
 
    该命令自动：拉取配置与代理源码 → 启动代理(:5173) → 启动 Cloudflare Tunnel → 每 60s 上报心跳。

@@ -14,14 +14,12 @@
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/guowei21/HW-AI-Shell-GLM5.2)
 
-> 详细步骤见 [docs/DEPLOY.md](docs/DEPLOY.md)（含一键部署与本地部署两种方式的完整说明）。
+> 详细步骤见 [docs/DEPLOY.md](docs/DEPLOY.md)。
 
 1. 点击上方按钮，登录 Cloudflare 账号；
 2. 选择账户，点击 **Deploy**；
 3. 按提示设置 `ADMIN_KEY`（面板登录密钥，自定义、保密）；
 4. 部署完成，打开面板 `https://aishell-admin.<ACCOUNT_ID>.workers.dev`。
-
-> 也可本地部署：`cd workers && npm i -D wrangler && npx wrangler secret put ADMIN_KEY && node sync-kv.mjs && npx wrangler deploy`
 
 ## 使用
 

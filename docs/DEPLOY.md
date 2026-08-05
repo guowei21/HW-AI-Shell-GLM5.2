@@ -1,6 +1,6 @@
 # 部署指南
 
-本项目管理面板是一个 Cloudflare Worker（`workers/`），通过 **Cloudflare 一键部署** 部署：
+本项目管理面板是一个 Cloudflare Worker，通过 **Cloudflare 一键部署** 部署：
 `https://aishell-admin.<ACCOUNT_ID>.workers.dev` 上的管理面板。
 
 > 部署只需要把**管理面板（Worker）**跑起来；真正的模型代理在 AI Shell 容器内，
@@ -22,7 +22,7 @@
 3. **配置页**：
    - 仓库名 / Worker 名（默认 `aishell-admin`）可自定义；
    - Cloudflare 会自动读取 `wrangler.toml`，**自动创建 KV namespace** 并绑定（无需手动操作）；
-   - 检测到 `workers/.dev.vars.example` 里的 `ADMIN_KEY` → **要求你输入 ADMIN_KEY 的值**（自定义强随机密钥，作为 secret 加密存储，此值就是面板登录密钥）。
+   - 检测到 `.dev.vars.example` 里的 `ADMIN_KEY` → **要求你输入 ADMIN_KEY 的值**（自定义强随机密钥，作为 secret 加密存储，此值就是面板登录密钥）。
 
 4. 点击 **Deploy**。Cloudflare 会自动：
    - 把 `admin.html`、代理源码、容器部署脚本上传到 KV；
@@ -40,7 +40,7 @@
 
 | 现象 | 处理 |
 |---|---|
-| 部署报 KV 相关错误 | 一键部署会自动创建 KV；若个别账号环境未自动创建，去 Dashboard → Workers & Pages → KV 手动建一个 namespace，把 id 填进 `workers/wrangler.toml` 的 `REPLACE_WITH_KV_NAMESPACE_ID` 后重新部署 |
+| 部署报 KV 相关错误 | 一键部署会自动创建 KV；若个别账号环境未自动创建，去 Dashboard → Workers & Pages → KV 手动建一个 namespace，把 id 填进 `wrangler.toml` 的 `REPLACE_WITH_KV_NAMESPACE_ID` 后重新部署 |
 | 忘记 ADMIN_KEY | Dashboard → Workers & Pages → `aishell-admin` → 设置 → 变量和机密，重新添加 `ADMIN_KEY` |
 | 想用自定义域名访问面板 | Dashboard → Worker → 设置 → 域和路由 → 添加自定义域 |
 

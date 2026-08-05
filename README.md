@@ -40,12 +40,11 @@
 
 ```text
 aishell-acp-openai-proxy.mjs    # 代理源码（经 Worker 分发到容器）
-workers/
-  src/index.js                  # Worker：登录鉴权/KV/心跳/bootstrap/脚本分发
-  src/admin.html                # WebUI 面板
-  src/deploy-remote.sh          # 容器端一键部署
-  sync-kv.mjs                   # 上传脚本到 KV
-  wrangler.toml / package.json
+src/index.js                    # Worker：登录鉴权/KV/心跳/bootstrap/脚本分发
+src/admin.html                  # WebUI 面板
+src/deploy-remote.sh            # 容器端一键部署
+sync-kv.mjs                     # 上传脚本到 KV
+wrangler.toml / package.json    # Worker 配置文件
 ```
 
 ## 安全

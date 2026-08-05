@@ -17,11 +17,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const files = {
-  'page:admin.html': path.join(ROOT, 'workers', 'src', 'admin.html'),
+  'page:admin.html': path.join(ROOT, 'src', 'admin.html'),
   'script:aishell-acp-openai-proxy.mjs': path.join(ROOT, 'aishell-acp-openai-proxy.mjs'),
-  'script:deploy-remote.sh': path.join(ROOT, 'workers', 'src', 'deploy-remote.sh'),
+  'script:deploy-remote.sh': path.join(ROOT, 'src', 'deploy-remote.sh'),
 };
 
 for (const [key, file] of Object.entries(files)) {

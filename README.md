@@ -1,9 +1,13 @@
-# Huawei AI Shell GLM 代理（Cloudflare Workers 全托管）
+# Huawei AI Shell GLM-5.2 → OpenAI 兼容 API（Cloudflare Workers 全托管）
 
-把华为 AI Shell 的 glm-5.2 模型能力转换为 OpenAI Chat Completions 接口。
-**管理面全部在 Cloudflare Workers 云端，本地零部署**：可视化 WebUI 面板（配置 token/域名/API key、
-生成 key 一键复制、查看容器状态与公网 URI）、配置存 KV、脚本分发、容器心跳均由 Worker 承担。
-AI Shell 容器内只需执行一行命令完成部署。
+把华为 AI Shell 容器内的 **glm-5.2** 模型能力，转换为标准的 **OpenAI Chat Completions 接口**。
+任意 OpenAI 兼容客户端（Codex / ChatBox / 自写脚本）改个 Base URL 即可使用 GLM-5.2。
+
+**管理面全部在 Cloudflare Workers 云端，本机零部署**：
+
+- 可视化 WebUI 面板：填写 tunnel token / 公网域名 / API Key，随机生成 Key 一键复制；
+- 配置存 Cloudflare KV，部署脚本经 Worker 分发，容器状态心跳实时上报；
+- AI Shell 容器内只需执行**一行命令**，自动完成代理部署 + Cloudflare Tunnel 公网穿透。
 
 ## 部署（一键）
 
@@ -25,8 +29,9 @@ AI Shell 容器内只需执行一行命令完成部署。
 ## 使用
 
 1. 打开面板，输入 ADMIN_KEY 登录（会话 24h）；
-2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 用仓库 `.github/workflows/tunnel-create.yml`
-   或本地 `tunnel-create.sh` 创建后填入）；
+2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 可先在 Cloudflare Dashboard
+   手动创建隧道获取，或用仓库 `.github/workflows/tunnel-create.yml` 自动创建——需额外配置
+   `CF_API_TOKEN` + `GH_PAT` 两个 Secrets）；
 3. 点"**随机生成**"API Key → 保存（存 KV）→ **复制**；
 4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
 

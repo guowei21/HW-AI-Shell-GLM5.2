@@ -1,80 +1,60 @@
-# Huawei AI Shell GLM 代理 · Cloudflare Workers 全托管版
+# Huawei AI Shell GLM 代理（Cloudflare Workers 全托管）
 
-把已登录的 Huawei AI Shell 模型能力转换为 OpenAI Chat Completions 接口。
-**全部管理面在 Cloudflare Workers 云端（本地零部署）**：WebUI 管理面板、配置存储（KV）、
-脚本分发、容器心跳，全部由 Worker 承担。AI Shell 容器内只需执行一行命令完成部署。
+把华为 AI Shell 的 glm-5.2 模型能力转换为 OpenAI Chat Completions 接口。
+**管理面全部在 Cloudflare Workers 云端，本地零部署**：可视化 WebUI 面板（配置 token/域名/API key、
+生成 key 一键复制、查看容器状态与公网 URI）、配置存 KV、脚本分发、容器心跳均由 Worker 承担。
+AI Shell 容器内只需执行一行命令完成部署。
+
+## 部署（一键）
+
+1. **上传仓库**：GitHub 建空仓库 → `git remote add origin <url> && git branch -M main && git push -u origin main`
+2. **配置 Secrets**（Settings → Secrets and variables → Actions）：
+
+   | Secret | 说明 |
+   |---|---|
+   | `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（Workers Scripts Edit / KV Storage Edit） |
+   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 账户 ID |
+   | `CF_KV_NAMESPACE_ID` | 运行 `npx wrangler kv namespace create KV` 得到的 id |
+   | `ADMIN_KEY` | 面板登录密钥（自定，保密） |
+
+3. **自动部署**：push 到 main 后 GitHub Actions 自动执行——上传脚本到 KV → 部署 Worker → 设置 ADMIN_KEY。
+   部署完成访问 `https://aishell-admin.<ACCOUNT_ID>.workers.dev`。
+
+也可本地部署：`cd workers && npm i -D wrangler && npx wrangler secret put ADMIN_KEY && node sync-kv.mjs && npx wrangler deploy`
+
+## 使用
+
+1. 打开面板，输入 ADMIN_KEY 登录（会话 24h）；
+2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 用仓库 `.github/workflows/tunnel-create.yml`
+   或本地 `tunnel-create.sh` 创建后填入）；
+3. 点"**随机生成**"API Key → 保存（存 KV）→ **复制**；
+4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
+
+   ```bash
+   ADMIN_KEY='<你的ADMIN_KEY>' bash <(curl -fsSL https://aishell-admin.<ACCOUNT_ID>.workers.dev/scripts/deploy-remote.sh) https://aishell-admin.<ACCOUNT_ID>.workers.dev
+   ```
+
+   该命令自动：拉取配置与代理源码 → 启动代理(:5173) → 启动 Cloudflare Tunnel → 每 60s 上报心跳。
+
+5. 面板实时显示容器状态与公网 URI `https://<域名>/v1`；客户端用 API Key 访问。
+
+## 目录
 
 ```text
-浏览器 → https://<worker>.workers.dev          （WebUI 管理面板）
-           ├─ 登录（ADMIN_KEY → 24h 会话）→ 填 token/域名/API key → KV
-           ├─ API key 随机生成 + 复制按钮
-           └─ 看容器状态（心跳）、公网/本地 URI + 复制
-                ↑ HTTPS                    ↑ HTTPS（容器内一行 curl）
-Workers：/api/login /api/status /api/config /api/bootstrap /api/heartbeat /scripts/
-                ↑
-AI Shell 容器（华为云端）：deploy-remote.sh 拉配置/拉脚本 → 起代理 :5173 → 起 cloudflared → 心跳
-```
-
-## 架构要点
-
-- **免 git 部署**：容器从 Worker 的 `/scripts/` 拉代理源码与部署脚本（存 KV），执行一行命令即完成；
-- **凭据分层**：
-  - `ADMIN_KEY`：面板**登录密钥**（`wrangler secret` 存储），登录换取 24h HMAC 会话 token；
-  - `API key`：客户端访问 `/v1` 的凭证，**存 KV**（面板生成/查看/复制）；
-  - `tunnel token`：Cloudflare Tunnel 凭据，**存 KV**（容器 bootstrap 拉取）；
-- **容器心跳**：部署脚本每 60s 上报 `POST /api/heartbeat`，面板据此显示上游/隧道在线状态；
-- **无本地组件**：不需要 Windows 宿主装任何东西，cloudflared 直接在容器内运行。
-
-## 目录结构
-
-```text
-aishell-acp-openai-proxy.mjs   # 代理源码（经 Worker 分发到容器）
+aishell-acp-openai-proxy.mjs    # 代理源码（经 Worker 分发到容器）
 workers/
-  wrangler.toml                # Worker 配置（KV binding）
-  sync-kv.mjs                  # 上传 admin.html / 代理源码 / 部署脚本 到 KV
-  src/
-    index.js                   # Worker 主程序（路由/API/登录鉴权）
-    admin.html                 # WebUI（登录、配置、状态、API key 生成+复制）
-    deploy-remote.sh           # 容器端一键部署（拉配置/起代理/起隧道/心跳）
-.github/workflows/deploy.yml   # 一键部署：push 后自动部署 Worker + 上传 KV
-docs/multi-session-design.md   # 旧架构设计存档（已过时）
-archive/ research/             # 历史备份与逆向研究（不入库）
+  src/index.js                  # Worker：登录鉴权/KV/心跳/bootstrap/脚本分发
+  src/admin.html                # WebUI 面板
+  src/deploy-remote.sh          # 容器端一键部署
+  sync-kv.mjs                   # 上传脚本到 KV
+  wrangler.toml / package.json
+.github/workflows/deploy.yml    # 一键部署（push 自动部署）
+.github/workflows/tunnel-create.yml  # 建隧道（可选）
 ```
 
-## 一键部署（GitHub Actions）
+## 安全
 
-push 到 `main` 自动执行：安装 wrangler → 上传 KV → 部署 Worker → 设置 ADMIN_KEY。
-
-### 仓库 Secrets 需配置
-
-| Secret | 值 |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（权限：Workers Scripts Edit、Workers KV Storage Edit、Account Settings Read） |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 账户 ID |
-| `CF_KV_NAMESPACE_ID` | KV 命名空间 ID（`npx wrangler kv namespace create KV` 得到） |
-| `ADMIN_KEY` | 面板登录密钥（自定，保密） |
-
-### 本地首次部署（或不用 CI）
-
-```bash
-cd workers && npm i -D wrangler
-npx wrangler kv namespace create KV          # 把 id 填进 wrangler.toml + GitHub Secret
-npx wrangler secret put ADMIN_KEY
-node sync-kv.mjs && npx wrangler deploy
-```
-
-## 使用流程
-
-1. 打开 `https://<worker>.workers.dev`，输入 ADMIN_KEY 登录；
-2. 填 Public Hostname 域名 + tunnel run token（用 `tunnel-create.sh` 或 GitHub Actions 建隧道得到）；
-3. "随机生成"API key → 保存（存 KV）→ 复制；
-4. 面板底部复制容器部署命令，到 AI Shell 终端执行；
-5. 面板显示容器心跳（代理/模型/隧道）与公网 URI。
-
-## 安全边界
-
-- `ADMIN_KEY` 走 `wrangler secret`（加密存储），不入代码/仓库；
-- 所有 `/api/*` 需鉴权：面板用 Bearer 会话，容器用 `X-Admin-Key`；
-- KV 中凭据为明文，依赖 `ADMIN_KEY` 保护，切勿泄露；
-- 代理本地必须带 `LOCAL_PROXY_API_KEY`（即面板存的 API key），为空时所有请求免鉴权；
-- AI Shell 登录态无外部保活，失效需手动在网页重新登录并重跑部署命令。
+- `ADMIN_KEY` 经 `wrangler secret` 加密存储，不入代码；
+- 面板用登录会话（Bearer token）鉴权，容器用 `X-Admin-Key` 头；
+- API Key 为空时代理免鉴权，公网使用务必设置；
+- AI Shell 登录态无外部保活，失效需手动在网页重新登录并重跑容器部署命令。

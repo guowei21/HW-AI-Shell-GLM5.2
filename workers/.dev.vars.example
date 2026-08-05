@@ -1,0 +1,5 @@
+# 一键部署时，Cloudflare 会读取本文件并提示你填写各变量值（以 secret 方式加密存储）。
+# 部署后这些值会注入 Worker 环境；不要提交真实密钥，只提交本示例文件。
+
+# 面板登录密钥（必填，自定义强随机值，保密）
+ADMIN_KEY=change-me-to-a-strong-secret

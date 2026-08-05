@@ -13,6 +13,7 @@
  */
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,7 +26,7 @@ const files = {
 
 for (const [key, file] of Object.entries(files)) {
   const content = readFileSync(file, 'utf8');
-  const tmp = `/tmp/aishell-kv-${key.replace(/[^a-z0-9]/gi, '_')}`;
+  const tmp = path.join(os.tmpdir(), `aishell-kv-${key.replace(/[^a-z0-9]/gi, '_')}`);
   writeFileSync(tmp, content);
   console.log(`上传 ${key} (${content.length} bytes) ...`);
   execSync(`npx wrangler kv key put --binding=KV "${key}" "${tmp}"`, { stdio: 'inherit', cwd: path.dirname(fileURLToPath(import.meta.url)) });

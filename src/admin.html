@@ -134,6 +134,27 @@ input:focus{outline:2px solid rgba(47,111,237,.25);border-color:var(--accent)}
       保存后容器端需重新拉取配置生效（重跑部署命令）。</p>
   </section>
 
+  <!-- 模型选择 -->
+  <section class="card">
+    <h2>模型 <span class="tag">hwcloud 可切换</span></h2>
+    <label>GLM-5.2 容器可切换的底层模型（写入容器 settings.json，重跑部署命令生效）</label>
+    <div class="row">
+      <select class="grow" id="modelSel">
+        <option value="">（不设置，保持容器默认 glm-5.2）</option>
+        <option value="glm-5.2">glm-5.2（GLM-5.2，默认）</option>
+        <option value="glm-5">glm-5（GLM-5）</option>
+        <option value="glm-5.1">glm-5.1（GLM-5.1）</option>
+        <option value="deepseek-r1-250528">deepseek-r1-250528（DeepSeek-R1-0528）</option>
+        <option value="deepseek-v3.2">deepseek-v3.2（DeepSeek-V3.2）</option>
+        <option value="deepseek-v3.1-terminus">deepseek-v3.1-terminus（DeepSeek-V3.1）</option>
+        <option value="openpangu-2.0-flash">openpangu-2.0-flash（openPangu-2.0-Flash）</option>
+      </select>
+      <button class="btn" id="saveModelBtn">保存</button>
+    </div>
+    <p class="hint">切换后需在容器重跑部署命令（<code>deploy-remote.sh</code> 会自动写入 settings.json 并重启代理）。
+      模型列表来自容器 <code>/root/.huawei/hwcloud/settings.json</code> 探测结果。</p>
+  </section>
+
   <!-- 容器部署 -->
   <section class="card">
     <h2>AI Shell 容器部署命令</h2>
@@ -324,6 +345,7 @@ async function refresh() {
   if (!d) return;
   $('domain').value = d.domain || '';
   $('apiKeyShow').textContent = d.apiKey || '—';
+  if (d.model) $('modelSel').value = d.model;
   // SSH 连接信息
   $('sshCard').style.display = '';
   $('sshForward').textContent = 'cloudflared access ssh --hostname ssh.912219735.xyz --url localhost:2222';
@@ -384,6 +406,11 @@ $('saveApiKeyBtn').onclick = async () => {
   if (!k) { setMsg('key 为空', 'bad'); return; }
   const r = await api('/api/config', { method: 'POST', body: JSON.stringify({ apiKey: k }) });
   if (r) { setMsg('API Key 已保存'); refresh(); }
+};
+$('saveModelBtn').onclick = async () => {
+  const m = $('modelSel').value;
+  const r = await api('/api/config', { method: 'POST', body: JSON.stringify({ model: m }) });
+  if (r) { setMsg(m ? ('模型已保存：' + m + '（容器重跑部署命令生效）') : '模型已清空（恢复容器默认）'); refresh(); }
 };
 
 // 初始化：已有会话 token 直接进面板；否则查是否首次（需要先设置管理密码）

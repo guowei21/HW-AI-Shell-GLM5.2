@@ -109,8 +109,8 @@ export default {
     }
 
     if (method === 'GET' && path === '/api/status') {
-      const [domain, token, apiKey, heartbeatRaw, sshKey] = await Promise.all([
-        KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'), KV.get('ssh_key'),
+      const [domain, token, apiKey, heartbeatRaw, sshKey, model] = await Promise.all([
+        KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'), KV.get('ssh_key'), KV.get('model'),
       ]);
       let heartbeat = null;
       if (heartbeatRaw) { try { heartbeat = JSON.parse(heartbeatRaw); } catch { heartbeat = null; } }
@@ -119,6 +119,7 @@ export default {
         hasToken: !!token,
         apiKey: apiKey || '',
         sshKey: sshKey || '',
+        model: model || '',
         heartbeat,
       });
     }
@@ -130,17 +131,18 @@ export default {
       if (body.token !== undefined) ops.push(KV.put('token', String(body.token).trim()));
       if (body.apiKey !== undefined) ops.push(KV.put('api_key', String(body.apiKey).trim()));
       if (body.sshKey !== undefined) ops.push(KV.put('ssh_key', String(body.sshKey)));
+      if (body.model !== undefined) ops.push(KV.put('model', String(body.model).trim()));
       await Promise.all(ops);
       return json({ ok: true });
     }
 
     // 容器端拉取全量配置（bootstrap）
     if (method === 'GET' && path === '/api/bootstrap') {
-      const [token, domain, apiKey] = await Promise.all([
-        KV.get('token'), KV.get('domain'), KV.get('api_key'),
+      const [token, domain, apiKey, model] = await Promise.all([
+        KV.get('token'), KV.get('domain'), KV.get('api_key'), KV.get('model'),
       ]);
       if (!token) return json({ ok: false, error: 'tunnel token 未配置，请先在面板填写' }, 400);
-      return json({ ok: true, token, domain: domain || '', apiKey: apiKey || '' });
+      return json({ ok: true, token, domain: domain || '', apiKey: apiKey || '', model: model || '' });
     }
 
     // 容器心跳上报

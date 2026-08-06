@@ -69,8 +69,29 @@ CONFIG="$(curl -fsSL "${AUTH[@]}" "$WORKER_URL/api/bootstrap")"
 TOKEN="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.token||'')}catch{}})" 2>/dev/null || true)"
 API_KEY="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.apiKey||'')}catch{}})" 2>/dev/null || true)"
 DOMAIN="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.domain||'')}catch{}})" 2>/dev/null || true)"
+MODEL="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.model||'')}catch{}})" 2>/dev/null || true)"
 [[ -n "$TOKEN" ]] || { echo '错误：bootstrap 未返回 token（面板里填了吗？）' >&2; exit 1; }
 echo "    域名: ${DOMAIN:-（未配置）}"
+
+# 应用模型配置：写入容器 settings.json 的 current_model（面板/环境变量 MODEL 均可覆盖）
+if [[ -n "${MODEL:-$HUAWEI_GLM_MODEL}" ]]; then
+  TARGET_MODEL="${MODEL:-$HUAWEI_GLM_MODEL}"
+  SETTINGS_FILE="$HOME/.huawei/hwcloud/settings.json"
+  if [[ -f "$SETTINGS_FILE" ]]; then
+    CUR_MODEL="$("$NODE_BIN" -e "try{const o=require('$SETTINGS_FILE');console.log(o.current_model||'')}catch{console.log('')}" 2>/dev/null || true)"
+    if [[ "$CUR_MODEL" != "$TARGET_MODEL" ]]; then
+      "$NODE_BIN" -e "const fs=require('fs');const p='$SETTINGS_FILE';const o=JSON.parse(fs.readFileSync(p,'utf8'));o.current_model=process.argv[1];fs.writeFileSync(p,JSON.stringify(o,null,2))" "$TARGET_MODEL" 2>/dev/null \
+        && echo "    模型: $TARGET_MODEL（已写入 settings.json，原为 ${CUR_MODEL:-无}）" \
+        || echo "    ⚠ 模型写入失败"
+    else
+      echo "    模型: $TARGET_MODEL（已生效）"
+    fi
+  else
+    echo "    ⚠ settings.json 不存在，跳过模型配置"
+  fi
+else
+  echo "    模型: （面板未设置，保持容器默认）"
+fi
 
 echo '==> 2/5 拉取代理源码'
 mkdir -p "$PROXY_DIR"

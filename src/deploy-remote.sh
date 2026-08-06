@@ -45,6 +45,9 @@ if [ ! -f /root/.ssh/id_ed25519 ]; then
   chmod 600 /root/.ssh/authorized_keys 2>/dev/null || true
 fi
 SSHD_CFG=/etc/ssh/sshd_config
+# 自修复：AuthorizedKeysFile 行曾被 echo -e "\n" 未生效粘行污染（值变成
+# ".ssh/authorized_keysPermitRootLogin prohibit-password" → sshd 找不到公钥 → 拒绝登录）
+sed -i 's|^AuthorizedKeysFile.*PermitRootLogin.*|AuthorizedKeysFile  .ssh/authorized_keys|' "$SSHD_CFG" 2>/dev/null || true
 grep -qs '^PermitRootLogin' "$SSHD_CFG" || echo 'PermitRootLogin prohibit-password' >> "$SSHD_CFG"
 grep -qs '^PasswordAuthentication' "$SSHD_CFG" || echo 'PasswordAuthentication no' >> "$SSHD_CFG"
 if ! pgrep -x sshd >/dev/null 2>&1; then

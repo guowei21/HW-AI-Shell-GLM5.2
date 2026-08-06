@@ -316,7 +316,11 @@ async function refresh() {
     $('upstream').innerHTML = upOnline
       ? '<span class="pill ok">在线</span>' + (up.version ? ' v' + up.version : '')
       : '<span class="pill bad">离线</span>';
-    $('models').textContent = (hb.models && hb.models.length) ? hb.models.join(', ') : '—';
+    // 兼容两种格式：数组 ["glm-5.2"] 或对象 {data:[{id}]}
+    let modelsList = null;
+    if (Array.isArray(hb.models)) modelsList = hb.models;
+    else if (hb.models && Array.isArray(hb.models.data)) modelsList = hb.models.data.map((m) => m.id || m);
+    $('models').textContent = (modelsList && modelsList.length) ? modelsList.join(', ') : '—';
     $('tunnel').innerHTML = hb.tunnel && hb.tunnel.running
       ? '<span class="pill ok">运行中</span>'
       : '<span class="pill warn">未运行</span>';

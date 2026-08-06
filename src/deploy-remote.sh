@@ -91,7 +91,7 @@ echo '==> 5/5 心跳上报与保活'
 heartbeat() {
   local up models_json tun
   up="$(curl -fsS -H "Authorization: Bearer $API_KEY" "http://127.0.0.1:$PROXY_PORT/health" 2>/dev/null || echo '{}')"
-  models_json="$(curl -fsS -H "Authorization: Bearer $API_KEY" "http://127.0.0.1:$PROXY_PORT/v1/models" 2>/dev/null | head -c 2000 || echo '{"data":[]}')"
+  models_json="$(curl -fsS -H "Authorization: Bearer $API_KEY" "http://127.0.0.1:$PROXY_PORT/v1/models" 2>/dev/null | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(JSON.stringify((o.data||[]).map(m=>m.id).filter(Boolean)))}catch{console.log('[]')}})" 2>/dev/null || echo '[]')"
   if pgrep -f 'cloudflared tunnel run' >/dev/null 2>&1; then tun='{"running":true}'; else tun='{"running":false}'; fi
   curl -fsS -X POST "${AUTH[@]}" -H 'Content-Type: application/json' \
     -d "{\"upstream\":$up,\"models\":$models_json,\"tunnel\":$tun,\"host\":\"$(hostname)\"}" \

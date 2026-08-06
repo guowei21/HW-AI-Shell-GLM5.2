@@ -4,20 +4,21 @@
 
 ```
 artifacts/
-  soul.md          # 默认系统提示词（可选）——部署默认使用，整文件替换容器 /root/.huawei/hwcloud/SOUL.md
-  soul-keysmith.md # 第二套提示词（可选）——安全研究模式（codex-keysmith），SOUL_KIND=keysmith 时使用
+  soul.md          # 默认系统提示词（合成版：AGENTS.md + keysmith 输出规范，44KB）
+                   #   通用任务走 AGENTS.md 工程师人格；CTF/安全研究任务走 keysmith 规范
+  soul-keysmith.md # 第二套提示词（纯 keysmith，可选）——SOUL_KIND=keysmith 时使用
   skills/          # 技能包（可选）——部署时删除容器 /root/.agents/skills/ 全部原技能后解压替换
     <skill-name>/      # 每个子目录一个技能，标准 SKILL.md 结构
       SKILL.md
       scripts/ ... references/ ...（按技能需要）
 ```
 
-## 两套提示词说明
+## 提示词说明
 
 | 文件 | 内容 | 部署方式 |
 |---|---|---|
-| `soul.md` | AGENTS.md Operator Core（通用工程师人格） | 默认（不带额外参数） |
-| `soul-keysmith.md` | codex-keysmith unrestricted（安全研究模式，配合 CTF 技能） | `SOUL_KIND=keysmith` |
+| `soul.md` | **合成版**：AGENTS.md Operator Core（通用工程师人格）+ codex-keysmith 输出规范（安全研究模式）。头部定义了优先级：通用任务走工程师人格，CTF/安全研究/本地样本任务走 keysmith 规范 | 默认（不带额外参数） |
+| `soul-keysmith.md` | 纯 codex-keysmith unrestricted（只有安全研究规范） | `SOUL_KIND=keysmith`（备选） |
 
 ## 使用流程
 

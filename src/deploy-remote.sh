@@ -55,15 +55,32 @@ sleep 2
 
 echo '==> 4/5 启动 Cloudflare Tunnel'
 if ! command -v cloudflared >/dev/null 2>&1; then
-  echo '    安装 cloudflared...'
+  echo '    安装 cloudflared（多镜像加速）...'
   ARCH="$(uname -m)"
   case "$ARCH" in
     x86_64|amd64) CF_ARCH=amd64 ;;
     aarch64|arm64) CF_ARCH=arm64 ;;
     *) echo "不支持的架构 $ARCH" >&2; exit 1 ;;
   esac
-  curl -fsSL "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}" \
-    -o /usr/local/bin/cloudflared
+  CFDL="cloudflared-linux-${CF_ARCH}"
+  DL_OK=0
+  for URL in \
+    "https://ghfast.top/https://github.com/cloudflare/cloudflared/releases/latest/download/${CFDL}" \
+    "https://mirror.ghproxy.com/https://github.com/cloudflare/cloudflared/releases/latest/download/${CFDL}" \
+    "https://gh-proxy.com/https://github.com/cloudflare/cloudflared/releases/latest/download/${CFDL}" \
+    "https://github.com/cloudflare/cloudflared/releases/latest/download/${CFDL}"; do
+    echo "    尝试: $URL"
+    if curl -fsSL --connect-timeout 10 --max-time 180 "$URL" -o /usr/local/bin/cloudflared; then
+      DL_OK=1
+      echo '    下载成功'
+      break
+    fi
+    echo '    失败，换下一个源...'
+  done
+  if [ "$DL_OK" -ne 1 ]; then
+    echo 'cloudflared 下载失败，请检查网络后重试（或手动下载放 /usr/local/bin/cloudflared）' >&2
+    exit 1
+  fi
   chmod 755 /usr/local/bin/cloudflared
 fi
 pkill -f 'cloudflared tunnel run' 2>/dev/null || true

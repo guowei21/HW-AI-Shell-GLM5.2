@@ -36,6 +36,23 @@ pkill -f 'cloudflared tunnel run' 2>/dev/null || true
 rm -f "$PROXY_DIR/heartbeat.pid" 2>/dev/null || true
 sleep 1   # 给旧进程一点时间退出
 
+# 2. 确保 SSH 服务（22 端口）常开（幂等：密钥/配置已存在则不重复，运行中不重启）
+echo '==> 准备 SSH 服务（:22）'
+mkdir -p /root/.ssh && chmod 700 /root/.ssh
+if [ ! -f /root/.ssh/id_ed25519 ]; then
+  ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519 -q >/dev/null 2>&1 || true
+  cat /root/.ssh/id_ed25519.pub >> /root/.ssh/authorized_keys 2>/dev/null || true
+  chmod 600 /root/.ssh/authorized_keys 2>/dev/null || true
+fi
+SSHD_CFG=/etc/ssh/sshd_config
+grep -qs '^PermitRootLogin' "$SSHD_CFG" || echo 'PermitRootLogin prohibit-password' >> "$SSHD_CFG"
+grep -qs '^PasswordAuthentication' "$SSHD_CFG" || echo 'PasswordAuthentication no' >> "$SSHD_CFG"
+if ! pgrep -x sshd >/dev/null 2>&1; then
+  /usr/sbin/sshd >/dev/null 2>&1 || service ssh start >/dev/null 2>&1 || true
+  sleep 1
+fi
+ss -tln 2>/dev/null | grep -q ':22' && echo '    SSH :22 已开启（密钥登录）' || echo '    ⚠ SSH 未开启（容器可能无 sshd）'
+
 echo '==> 1/5 拉取配置'
 CONFIG="$(curl -fsSL "${AUTH[@]}" "$WORKER_URL/api/bootstrap")"
 TOKEN="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.token||'')}catch{}})" 2>/dev/null || true)"

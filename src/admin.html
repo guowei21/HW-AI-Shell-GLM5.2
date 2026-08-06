@@ -139,7 +139,7 @@ input:focus{outline:2px solid rgba(47,111,237,.25);border-color:var(--accent)}
     <p class="hint">打开 root 终端：在 AI Shell 终端界面连续按下两次 <b>Ctrl+C</b> 即切换到 root。
       然后执行下面这行——脚本会从本 Worker 拉取代理源码与配置，自动启动代理与 Cloudflare Tunnel。
       重复执行可用于重启/更新。复制按钮会自动填入你的管理密码（ADMIN_KEY）。</p>
-    <div class="cmd" id="deployCmd">—<button class="icon-btn" onclick="copyDeployCmd()">复制</button></div>
+    <div class="cmd"><code id="deployCmdText">—</code><button class="icon-btn" onclick="copyDeployCmd()">复制</button></div>
   </section>
 
   <!-- 修改管理密码 -->
@@ -268,7 +268,7 @@ function copyText(id) {
 
 // 复制容器部署命令：自动用当前管理密码替换占位符 ADMIN_KEY
 function copyDeployCmd() {
-  const el = $('deployCmd');
+  const el = $('deployCmdText');
   let cmd = el.textContent;
   if (!cmd || cmd === '—') { setMsg('请先保存域名/token 后刷新本页', 'bad'); return; }
   const key = sessionStorage.getItem('admin_key') || '';
@@ -321,7 +321,7 @@ async function refresh() {
   }
   $('uriPublic').textContent = d.domain ? `https://${d.domain}/v1` : '—';
   $('uriLocal').textContent = '容器内 http://127.0.0.1:5173/v1';
-  $('deployCmd').textContent = `ADMIN_KEY='<部署时的ADMIN_KEY>' bash <(curl -fsSL ${location.origin}/scripts/deploy-remote.sh) ${location.origin}`;
+  $('deployCmdText').textContent = `ADMIN_KEY='<部署时的ADMIN_KEY>' bash <(curl -fsSL ${location.origin}/scripts/deploy-remote.sh) ${location.origin}`;
 }
 
 $('loginBtn').onclick = login;

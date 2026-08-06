@@ -63,7 +63,14 @@ export CLOUDFLARE_ACCOUNT_ID=<你的Account ID>
 npx wrangler kv namespace create KV
 #    输出：id = "xxxx..." → 编辑 wrangler.toml，替换 id = "..." 为真实值
 
-# 4. 一键部署（自动：上传面板/脚本到 KV → 部署 Worker）
+# 4. 设置面板登录密钥 ADMIN_KEY（只需一次）
+npx wrangler secret put ADMIN_KEY
+
+# 5. 上传提示词与技能到 KV（仓库自带 artifacts/：SOUL 提示词 + 14 个 CTF/安全技能，约 2.5MB）
+#    容器部署时会整体替换容器内原有提示词/技能（未上传则保留原文件）
+node upload-artifacts.mjs
+
+# 6. 一键部署（自动：上传面板/脚本到 KV → 部署 Worker）
 npm run deploy
 ```
 

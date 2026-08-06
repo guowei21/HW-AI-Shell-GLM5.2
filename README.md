@@ -34,9 +34,16 @@ npx wrangler kv namespace create KV
 # 4. 设置面板登录密钥 ADMIN_KEY（只需一次，自定义强随机值）
 npx wrangler secret put ADMIN_KEY
 
-# 5. 一键部署（自动：上传面板/代理源码/部署脚本到 KV → 部署 Worker）
+# 5. 上传提示词与技能到 KV（仓库自带 artifacts/：SOUL 提示词 + 14 个 CTF/安全技能，约 2.5MB）
+#    容器部署时会整体替换容器内原有提示词/技能（未上传则保留原文件）
+node upload-artifacts.mjs
+
+# 6. 一键部署（自动：上传面板/代理源码/部署脚本到 KV → 部署 Worker）
 npm run deploy
 ```
+
+> 提示词/技能自定义：编辑 `artifacts/soul.md`（系统提示词）与 `artifacts/skills/<技能名>/`（技能包），
+> 重新执行第 5 步即更新 KV；容器重跑部署命令后整体替换生效（详见 [artifacts/README.md](artifacts/README.md)）。
 
 部署完成，面板地址：
 

@@ -12,8 +12,10 @@
 
 ## 部署
 
+📖 **完整部署教程（从零到可用，实测通过）见 [docs/TUTORIAL.md](docs/TUTORIAL.md)**；
+简明部署与踩坑记录见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+
 实测推荐**本地 wrangler 一键部署**（几分钟完成），也可用 Cloudflare 一键按钮或 Dashboard 连接 Git。
-详细步骤与踩坑记录见 [docs/DEPLOY.md](docs/DEPLOY.md)。
 
 ### 方式一：本地 wrangler 一键部署（实测成功 ✅）
 

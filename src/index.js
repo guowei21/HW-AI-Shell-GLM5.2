@@ -70,6 +70,16 @@ export default {
       return json({ ok: true });
     }
 
+    // 脚本分发（公开：容器 curl 拉取；脚本本身不含敏感信息，bootstrap 配置仍鉴权）
+    if (method === 'GET' && path.startsWith('/scripts/')) {
+      const name = decodeURIComponent(path.slice('/scripts/'.length));
+      const content = await KV.get(`script:${name}`);
+      if (content === null) return json({ error: `script not found: ${name}` }, 404);
+      return new Response(content, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
+
     // 登录：密码 → 会话 token
     if (method === 'POST' && path === '/api/login') {
       const body = await request.json().catch(() => ({}));
@@ -143,16 +153,6 @@ export default {
       };
       await KV.put('heartbeat', JSON.stringify(heartbeat));
       return json({ ok: true });
-    }
-
-    // 脚本分发（免 git：容器 curl 拉取）
-    if (method === 'GET' && path.startsWith('/scripts/')) {
-      const name = decodeURIComponent(path.slice('/scripts/'.length));
-      const content = await KV.get(`script:${name}`);
-      if (content === null) return json({ error: `script not found: ${name}` }, 404);
-      return new Response(content, {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
-      });
     }
 
     return json({ error: 'not found' }, 404);

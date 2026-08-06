@@ -160,7 +160,13 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/<ZONE_ID>/dns_records" 
 
 ## 七、AI Shell 容器部署（2 分钟）
 
-在 **AI Shell 网页终端**（容器内，root）执行面板生成的命令：
+### 7.1 打开 root 终端
+
+AI Shell 网页终端默认不是 root——在 **AI Shell 终端界面连续按下两次 `Ctrl+C`** 即可切换到 root 终端（容器内，具备安装权限）。
+
+### 7.2 执行部署命令
+
+回到面板，**AI Shell 容器部署命令**卡片：点击"复制"按钮（会自动把 `<部署时的ADMIN_KEY>` 替换成你的管理密码），然后粘贴到 AI Shell root 终端执行：
 
 ```bash
 ADMIN_KEY='<你的管理密码>' bash <(curl -fsSL https://admin.你的域名.com/scripts/deploy-remote.sh) https://admin.你的域名.com

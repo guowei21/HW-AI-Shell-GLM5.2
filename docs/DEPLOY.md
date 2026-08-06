@@ -85,12 +85,13 @@ curl https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev/api/health
 1. 打开面板 `https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev`（或自定义域名），输入 ADMIN_KEY 登录（会话 24h）；
 2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 在 Cloudflare Dashboard → Zero Trust → Networks → Tunnels 创建）；
 3. 点"**随机生成**"API Key → 保存（存 KV）→ 复制；
-4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
+4. **打开 root 终端**：AI Shell 终端界面连续按下两次 `Ctrl+C` 即切换到 root；
+5. 回到面板"AI Shell 容器部署命令"卡片，点**复制**按钮（自动填入 ADMIN_KEY），粘贴到 root 终端执行：
    ```bash
    ADMIN_KEY='<你的ADMIN_KEY>' bash <(curl -fsSL https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev/scripts/deploy-remote.sh) https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev
    ```
    该命令自动：拉取配置与代理源码 → 启动代理(:5173) → 启动 Cloudflare Tunnel → 每 60s 上报心跳；
-5. 面板实时显示容器状态与公网 URI `https://<域名>/v1`；客户端用 API Key 访问。
+6. 面板实时显示容器状态与公网 URI `https://<域名>/v1`；客户端用 API Key 访问。
 
 ## 常用命令
 

@@ -56,7 +56,8 @@ https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev
 1. 打开面板，输入 ADMIN_KEY 登录（会话 24h）；
 2. 填 **Public Hostname 域名** 与 **tunnel run token**（token 在 Cloudflare Dashboard 手动创建隧道获取）；
 3. 点"**随机生成**"API Key → 保存（存 KV）→ **复制**；
-4. 复制面板底部的容器部署命令，到 AI Shell 终端（root）执行：
+4. **打开 root 终端**：在 AI Shell 终端界面连续按下两次 `Ctrl+C` 即切换到 root；
+   然后点面板"AI Shell 容器部署命令"卡片的**复制**按钮（自动填入 ADMIN_KEY），粘贴到终端执行：
 
    ```bash
    ADMIN_KEY='<你的ADMIN_KEY>' bash <(curl -fsSL https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev/scripts/deploy-remote.sh) https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev

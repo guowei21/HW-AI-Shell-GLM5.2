@@ -87,6 +87,7 @@ input:focus{outline:2px solid rgba(47,111,237,.25);border-color:var(--accent)}
       <div class="item"><div class="k">模型</div><div class="v" id="models">—</div></div>
       <div class="item"><div class="k">隧道</div><div class="v" id="tunnel">—</div></div>
     </div>
+    <div class="hint" style="margin-top:8px" id="cacheStats">缓存统计: —</div>
     <div class="row" style="margin-top:12px">
       <button class="btn ghost" id="refreshBtn">刷新</button>
     </div>
@@ -324,6 +325,11 @@ async function refresh() {
     $('tunnel').innerHTML = hb.tunnel && hb.tunnel.running
       ? '<span class="pill ok">运行中</span>'
       : '<span class="pill warn">未运行</span>';
+    // 缓存命中统计（来自代理 /health 的 response_cache）
+    const rc = up && up.response_cache;
+    $('cacheStats').textContent = rc
+      ? `缓存: 命中 ${rc.hits} / 未命中 ${rc.misses} / 命中率 ${(rc.hit_rate * 100).toFixed(1)}% / 当前 ${rc.entries}/${rc.max_entries} 条 (TTL ${(rc.ttl_ms / 1000 / 60).toFixed(0)}min)`
+      : '缓存统计: —（代理未上报）';
   } else {
     $('hbTime').textContent = '';
     $('upstream').innerHTML = '<span class="pill bad">离线</span>';

@@ -29,14 +29,7 @@ if [[ -z "$WORKER_URL" || -z "$ADMIN_KEY" ]]; then
 fi
 AUTH=(-H "X-Admin-Key: $ADMIN_KEY")
 
-# 1. 清理残留进程（防旧版本心跳循环/代理/隧道覆盖心跳数据）
-pkill -f "sleep ${HEARTBEAT_INTERVAL}" 2>/dev/null || true   # 旧心跳循环在 sleep 状态
-pkill -f 'aishell-acp-openai-proxy.mjs' 2>/dev/null || true
-pkill -f 'cloudflared tunnel run' 2>/dev/null || true
-rm -f "$PROXY_DIR/heartbeat.pid" 2>/dev/null || true
-sleep 1   # 给旧进程一点时间退出
-
-# 2. 确保 SSH 服务（22 端口）常开（幂等：密钥/配置已存在则不重复，运行中不重启）
+# 确保 SSH 服务（22 端口）常开（幂等：密钥/配置已存在则不重复，运行中不重启）
 echo '==> 准备 SSH 服务（:22）'
 mkdir -p /root/.ssh && chmod 700 /root/.ssh
 if [ ! -f /root/.ssh/id_ed25519 ]; then
@@ -77,8 +70,8 @@ echo "    域名: ${DOMAIN:-（未配置）}"
 echo "    自动批准: $([ "$AUTO_APPROVE" = 1 ] && echo '开启（工具/命令自动允许）' || echo '关闭（每步确认）')"
 
 # 应用模型配置：写入容器 settings.json 的 current_model（面板/环境变量 MODEL 均可覆盖）
-if [[ -n "${MODEL:-$HUAWEI_GLM_MODEL}" ]]; then
-  TARGET_MODEL="${MODEL:-$HUAWEI_GLM_MODEL}"
+if [[ -n "${MODEL:-${HUAWEI_GLM_MODEL:-}}" ]]; then
+  TARGET_MODEL="${MODEL:-${HUAWEI_GLM_MODEL:-}}"
   SETTINGS_FILE="$HOME/.huawei/hwcloud/settings.json"
   if [[ -f "$SETTINGS_FILE" ]]; then
     CUR_MODEL="$("$NODE_BIN" -e "try{const o=require('$SETTINGS_FILE');console.log(o.current_model||'')}catch{console.log('')}" 2>/dev/null || true)"
@@ -101,6 +94,14 @@ mkdir -p "$PROXY_DIR"
 curl -fsSL "${AUTH[@]}" "$WORKER_URL/scripts/aishell-acp-openai-proxy.mjs" \
   -o "$PROXY_DIR/aishell-acp-openai-proxy.mjs"
 chmod 600 "$PROXY_DIR/aishell-acp-openai-proxy.mjs"
+
+# 清理残留进程（配置与源码已拉取成功才停止旧服务；中途失败时旧服务不受影响）
+echo '==> 停止旧服务（代理/隧道/心跳）'
+pkill -f "sleep ${HEARTBEAT_INTERVAL}" 2>/dev/null || true   # 旧心跳循环在 sleep 状态
+pkill -f 'aishell-acp-openai-proxy.mjs' 2>/dev/null || true
+pkill -f 'cloudflared tunnel run' 2>/dev/null || true
+rm -f "$PROXY_DIR/heartbeat.pid" 2>/dev/null || true
+sleep 1   # 给旧进程一点时间退出
 
 echo '==> 部署提示词与技能（替换式）'
 # SOUL.md（系统提示词）：SOUL_KIND=keysmith 用第二套（安全研究），默认 default（AGENTS.md 工程师人格）

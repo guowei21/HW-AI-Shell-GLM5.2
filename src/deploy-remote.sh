@@ -52,6 +52,14 @@ if ! pgrep -x sshd >/dev/null 2>&1; then
   sleep 1
 fi
 ss -tln 2>/dev/null | grep -q ':22' && echo '    SSH :22 已开启（密钥登录）' || echo '    ⚠ SSH 未开启（容器可能无 sshd）'
+# 上传 SSH 私钥到面板（供面板显示/一键复制）
+if [ -f /root/.ssh/id_ed25519 ]; then
+  KEYJSON="$("$NODE_BIN" -e "const fs=require('fs');process.stdout.write(JSON.stringify({sshKey:fs.readFileSync('/root/.ssh/id_ed25519','utf8')}))" 2>/dev/null || true)"
+  if [ -n "$KEYJSON" ]; then
+    curl -fsS -X POST "${AUTH[@]}" -H 'Content-Type: application/json' -d "$KEYJSON" "$WORKER_URL/api/config" >/dev/null 2>&1 || true
+    echo '    SSH 私钥已上传面板'
+  fi
+fi
 
 echo '==> 1/5 拉取配置'
 CONFIG="$(curl -fsSL "${AUTH[@]}" "$WORKER_URL/api/bootstrap")"

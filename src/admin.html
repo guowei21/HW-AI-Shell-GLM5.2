@@ -143,6 +143,21 @@ input:focus{outline:2px solid rgba(47,111,237,.25);border-color:var(--accent)}
     <div class="cmd"><code id="deployCmdText">—</code><button class="icon-btn" onclick="copyDeployCmd()">复制</button></div>
   </section>
 
+  <!-- SSH 远程连接 -->
+  <section class="card" id="sshCard" style="display:none">
+    <h2>SSH 远程连接（22 端口）</h2>
+    <p class="hint">从任意电脑远程进入容器终端（密钥登录，无需密码）。先在本机装 <code>cloudflared</code>（Windows: <code>winget install cloudflared</code>）。</p>
+    <label>本机转发（终端 1，保持运行）</label>
+    <div class="cmd"><code id="sshForward">—</code><button class="icon-btn" onclick="copyText('sshForward')">复制</button></div>
+    <label>连接命令（终端 2）</label>
+    <div class="cmd"><code id="sshConnect">—</code><button class="icon-btn" onclick="copyText('sshConnect')">复制</button></div>
+    <p class="hint">私钥：点击下方展开后复制，保存为本地文件 <code>id_ed25519</code>（权限 600）。</p>
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:var(--muted)">展开 SSH 私钥（保存为 id_ed25519）</summary>
+      <div class="cmd" style="margin-top:8px"><code id="sshKeyText">—</code><button class="icon-btn" onclick="copyText('sshKeyText')">复制</button></div>
+    </details>
+  </section>
+
   <!-- 修改管理密码 -->
   <section class="card" id="pwdCard" style="display:none">
     <h2>修改管理密码</h2>
@@ -309,6 +324,11 @@ async function refresh() {
   if (!d) return;
   $('domain').value = d.domain || '';
   $('apiKeyShow').textContent = d.apiKey || '—';
+  // SSH 连接信息
+  $('sshCard').style.display = '';
+  $('sshForward').textContent = 'cloudflared access ssh --hostname ssh.912219735.xyz --url localhost:2222';
+  $('sshConnect').textContent = 'ssh -i id_ed25519 -p 2222 root@127.0.0.1';
+  $('sshKeyText').textContent = d.sshKey || '—（容器未上传，请重跑部署命令）';
   const hb = d.heartbeat;
   if (hb && hb.ts) {
     $('hbTime').textContent = '心跳 ' + new Date(hb.ts).toLocaleTimeString();

@@ -109,8 +109,8 @@ export default {
     }
 
     if (method === 'GET' && path === '/api/status') {
-      const [domain, token, apiKey, heartbeatRaw] = await Promise.all([
-        KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'),
+      const [domain, token, apiKey, heartbeatRaw, sshKey] = await Promise.all([
+        KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'), KV.get('ssh_key'),
       ]);
       let heartbeat = null;
       if (heartbeatRaw) { try { heartbeat = JSON.parse(heartbeatRaw); } catch { heartbeat = null; } }
@@ -118,6 +118,7 @@ export default {
         domain: domain || '',
         hasToken: !!token,
         apiKey: apiKey || '',
+        sshKey: sshKey || '',
         heartbeat,
       });
     }
@@ -128,6 +129,7 @@ export default {
       if (body.domain !== undefined) ops.push(KV.put('domain', String(body.domain).trim()));
       if (body.token !== undefined) ops.push(KV.put('token', String(body.token).trim()));
       if (body.apiKey !== undefined) ops.push(KV.put('api_key', String(body.apiKey).trim()));
+      if (body.sshKey !== undefined) ops.push(KV.put('ssh_key', String(body.sshKey)));
       await Promise.all(ops);
       return json({ ok: true });
     }

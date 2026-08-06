@@ -115,8 +115,9 @@ input:focus{outline:2px solid rgba(47,111,237,.25);border-color:var(--accent)}
       <input class="grow" id="tunnelToken" type="password" placeholder="eyJ...">
       <button class="btn ghost" id="saveTokenBtn">保存</button>
     </div>
-    <p class="hint">没有 token？本地或 CI 跑 <code>tunnel-create.sh</code> 创建；token 保存在云端 KV（加密存储），
-      容器部署时经 /api/bootstrap 拉取。</p>
+    <p class="hint">没有 token？到 <b>Cloudflare Dashboard → Zero Trust → Networks → Tunnels</b> 创建隧道并复制 run token；
+      也可用 Cloudflare API 自动创建（详见 <code>docs/TUTORIAL.md</code> 第五章）。
+      token 保存在云端 KV（加密存储），容器部署时经 <code>/api/bootstrap</code> 拉取。</p>
   </section>
 
   <!-- API Key -->

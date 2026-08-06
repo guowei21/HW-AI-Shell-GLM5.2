@@ -112,8 +112,11 @@ export default {
     if (method === 'GET' && path.startsWith('/api/artifacts/')) {
       const name = path.slice('/api/artifacts/'.length);
       if (name === 'soul') {
-        const soul = await KV.get('soul:SOUL.md');
-        if (soul === null) return json({ ok: false, error: 'soul not uploaded' }, 404);
+        // 支持 ?kind=keysmith 切换第二套提示词；默认 soul:SOUL.md
+        const kind = new URL(request.url).searchParams.get('kind') || 'default';
+        const key = kind === 'keysmith' ? 'soul:keysmith' : 'soul:SOUL.md';
+        const soul = await KV.get(key);
+        if (soul === null) return json({ ok: false, error: `soul(${kind}) not uploaded` }, 404);
         return new Response(soul, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
       }
       if (name === 'skills') {

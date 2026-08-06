@@ -10,6 +10,6 @@
     "sync": "node sync-kv.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.119.0"
   }
 }

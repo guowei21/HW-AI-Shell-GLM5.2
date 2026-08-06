@@ -108,6 +108,22 @@ export default {
       return json({ ok: true, message: '密码已修改，请用新密码重新登录' });
     }
 
+    // 提示词/技能包下载（容器部署时替换用，需鉴权）
+    if (method === 'GET' && path.startsWith('/api/artifacts/')) {
+      const name = path.slice('/api/artifacts/'.length);
+      if (name === 'soul') {
+        const soul = await KV.get('soul:SOUL.md');
+        if (soul === null) return json({ ok: false, error: 'soul not uploaded' }, 404);
+        return new Response(soul, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+      }
+      if (name === 'skills') {
+        const pkg = await KV.get('skills:package', { type: 'arrayBuffer' });
+        if (pkg === null) return json({ ok: false, error: 'skills not uploaded' }, 404);
+        return new Response(pkg, { headers: { 'Content-Type': 'application/gzip', 'Cache-Control': 'no-store' } });
+      }
+      return json({ error: `unknown artifact: ${name}` }, 404);
+    }
+
     if (method === 'GET' && path === '/api/status') {
       const [domain, token, apiKey, heartbeatRaw, sshKey, model, autoApprove] = await Promise.all([
         KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'), KV.get('ssh_key'), KV.get('model'), KV.get('auto_approve'),

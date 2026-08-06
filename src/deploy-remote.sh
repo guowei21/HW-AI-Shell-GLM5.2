@@ -102,6 +102,29 @@ curl -fsSL "${AUTH[@]}" "$WORKER_URL/scripts/aishell-acp-openai-proxy.mjs" \
   -o "$PROXY_DIR/aishell-acp-openai-proxy.mjs"
 chmod 600 "$PROXY_DIR/aishell-acp-openai-proxy.mjs"
 
+echo '==> 部署提示词与技能（替换式）'
+# SOUL.md（自定义系统提示词）：上传过则整文件替换，否则保留容器原文件
+SOUL_FILE="$HOME/.huawei/hwcloud/SOUL.md"
+if SOUL_CONTENT="$(curl -fsSL "${AUTH[@]}" "$WORKER_URL/api/artifacts/soul" 2>/dev/null)"; then
+  rm -f "$SOUL_FILE"
+  printf '%s\n' "$SOUL_CONTENT" > "$SOUL_FILE"
+  echo "    SOUL.md 已替换（$(wc -c < "$SOUL_FILE" 2>/dev/null || echo 0) 字节）"
+else
+  echo "    （KV 未上传自定义 SOUL，保留容器原 SOUL.md）"
+fi
+# 技能包：KV 有包则整体替换（删除容器原有全部技能），否则保留
+SKILLS_DIR="$HOME/.agents/skills"
+if curl -fsSL "${AUTH[@]}" "$WORKER_URL/api/artifacts/skills" -o /tmp/aishell-skills.tar.gz 2>/dev/null && tar tzf /tmp/aishell-skills.tar.gz >/dev/null 2>&1; then
+  rm -rf "$SKILLS_DIR"
+  mkdir -p "$HOME/.agents"
+  tar xzf /tmp/aishell-skills.tar.gz -C "$HOME/.agents"
+  N_SKILLS="$(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)"
+  echo "    技能包已替换（$N_SKILLS 个技能）"
+else
+  echo "    （KV 无技能包，保留容器原技能）"
+fi
+rm -f /tmp/aishell-skills.tar.gz
+
 echo '==> 3/5 启动代理（:5173）'
 pkill -f 'aishell-acp-openai-proxy.mjs' 2>/dev/null || true
 nohup env \

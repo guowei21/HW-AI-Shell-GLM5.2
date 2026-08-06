@@ -54,8 +54,9 @@ nohup env \
 sleep 2
 
 echo '==> 4/5 启动 Cloudflare Tunnel'
-if ! command -v cloudflared >/dev/null 2>&1; then
+if ! command -v cloudflared >/dev/null 2>&1 || [ ! -x "$(command -v cloudflared 2>/dev/null)" ]; then
   echo '    安装 cloudflared（多镜像加速）...'
+  rm -f /usr/local/bin/cloudflared   # 清理上次下载残留（避免权限/损坏问题）
   ARCH="$(uname -m)"
   case "$ARCH" in
     x86_64|amd64) CF_ARCH=amd64 ;;

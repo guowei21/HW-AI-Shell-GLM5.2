@@ -6,22 +6,25 @@
  *   2. 配置存储（KV）：tunnel token、公网域名、API key、容器心跳
  *   3. 脚本分发（GET /api/bootstrap + /scripts/）：AI Shell 容器一行 curl 拉取后自动部署
  *
- * 鉴权（两种）：
- *   - 面板：POST /api/login 用 ADMIN_KEY 换取 24h 会话 token（HMAC 签名），
+ * 鉴权（管理密码存 KV，key: admin_key，首次打开面板时由用户自行设置，可在面板内修改）：
+ *   - 首次：GET /api/setup-status 返回 needsSetup；用户设置密码 POST /api/setup
+ *   - 面板：POST /api/login 用管理密码换取 24h 会话 token（HMAC 签名），
  *           后续请求带 Authorization: Bearer <token>
- *   - 容器：直接带 X-Admin-Key 头（容器没有登录环节，需密钥本身）
+ *   - 容器：直接带 X-Admin-Key 头（容器没有登录环节，需密码本身）
+ *   - 修改密码：POST /api/change-password（需登录态 + 旧密码）
  *
  * 部署：
- *   cd workers && npm i -D wrangler
  *   npx wrangler kv namespace create KV        # 建 KV，把 id 填进 wrangler.toml
- *   npx wrangler secret put ADMIN_KEY          # 面板登录密钥 / 容器访问密钥
  *   node sync-kv.mjs                           # 上传 admin.html + 脚本到 KV
- *   npx wrangler deploy
+ *   npx wrangler deploy                        # 无需设置 ADMIN_KEY secret（密码由用户首次设置）
  *
  * 路由：
  *   GET  /                → WebUI（KV: page:admin.html）
  *   GET  /api/health      → 健康检查（无需鉴权）
- *   POST /api/login       → 密钥换会话 token
+ *   GET  /api/setup-status→ 是否首次（无需鉴权）
+ *   POST /api/setup       → 首次设置管理密码（仅未设置时）
+ *   POST /api/login       → 密码换会话 token
+ *   POST /api/change-password → 修改管理密码（需登录态 + 旧密码）
  *   GET  /api/status      → 面板：读 KV 配置 + 心跳
  *   POST /api/config      → 面板：保存 token/域名/API key
  *   GET  /api/bootstrap   → 容器：拉 token/域名/API key 全量配置
@@ -50,20 +53,50 @@ export default {
       return json({ ok: true, worker: 'hw-ai-shell-glm5-2', ts: Date.now() });
     }
 
-    // 登录：密钥 → 会话 token
+    // 是否首次使用（管理密码未设置，无鉴权）
+    if (method === 'GET' && path === '/api/setup-status') {
+      const current = await getAdminKey(env);
+      return json({ needsSetup: !current });
+    }
+
+    // 首次设置管理密码（仅当当前没有任何管理密码时）
+    if (method === 'POST' && path === '/api/setup') {
+      const body = await request.json().catch(() => ({}));
+      const key = String(body.key || '').trim();
+      const current = await getAdminKey(env);
+      if (current) return json({ ok: false, error: '管理密码已设置，请直接登录' }, 400);
+      if (key.length < 8) return json({ ok: false, error: '管理密码至少 8 位' }, 400);
+      await KV.put('admin_key', key);
+      return json({ ok: true });
+    }
+
+    // 登录：密码 → 会话 token
     if (method === 'POST' && path === '/api/login') {
       const body = await request.json().catch(() => ({}));
       const key = String(body.key || '').trim();
-      if (!env.ADMIN_KEY || key !== env.ADMIN_KEY) {
-        return json({ ok: false, error: '密钥错误' }, 401);
+      const current = await getAdminKey(env);
+      if (!current || key !== current) {
+        return json({ ok: false, error: '密码错误' }, 401);
       }
-      const token = await signSession(env.ADMIN_KEY, Date.now() + SESSION_TTL_MS);
+      const token = await signSession(current, Date.now() + SESSION_TTL_MS);
       return json({ ok: true, token, expiresIn: SESSION_TTL_MS });
     }
 
     // 统一鉴权：Bearer 会话 token 或 X-Admin-Key
     const authorized = await isAuthorized(request, env);
     if (!authorized) return json({ error: 'unauthorized' }, 401);
+
+    // 修改管理密码（需登录态 + 旧密码正确）
+    if (method === 'POST' && path === '/api/change-password') {
+      const body = await request.json().catch(() => ({}));
+      const oldKey = String(body.oldKey || '').trim();
+      const newKey = String(body.newKey || '').trim();
+      const current = await getAdminKey(env);
+      if (!current || oldKey !== current) return json({ ok: false, error: '旧密码错误' }, 401);
+      if (newKey.length < 8) return json({ ok: false, error: '新密码至少 8 位' }, 400);
+      await KV.put('admin_key', newKey);
+      return json({ ok: true, message: '密码已修改，请用新密码重新登录' });
+    }
 
     if (method === 'GET' && path === '/api/status') {
       const [domain, token, apiKey, heartbeatRaw] = await Promise.all([
@@ -152,14 +185,21 @@ async function verifySession(token, secret) {
   }
 }
 
+// 获取当前有效管理密码：KV 优先（用户设置/修改后以 KV 为准），env 作为兼容兜底
+async function getAdminKey(env) {
+  const kv = await env.KV.get('admin_key');
+  return kv || env.ADMIN_KEY || '';
+}
+
 async function isAuthorized(request, env) {
-  if (!env.ADMIN_KEY) return false;
+  const current = await getAdminKey(env);
+  if (!current) return false;
   const bearer = request.headers.get('Authorization') || '';
   if (bearer.startsWith('Bearer ')) {
-    return verifySession(bearer.slice(7).trim(), env.ADMIN_KEY);
+    return verifySession(bearer.slice(7).trim(), current);
   }
   const key = request.headers.get('X-Admin-Key') || '';
-  return key === env.ADMIN_KEY;
+  return key === current;
 }
 
 function htmlRes(body, status = 200) {

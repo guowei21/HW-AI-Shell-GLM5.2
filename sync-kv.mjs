@@ -50,7 +50,7 @@ for (const [key, file] of Object.entries(files)) {
   const tmp = path.join(os.tmpdir(), `aishell-kv-${key.replace(/[^a-z0-9]/gi, '_')}`);
   writeFileSync(tmp, content);
   console.log(`上传 ${key} (${content.length} bytes) ...`);
-  execSync(`npx wrangler kv key put --binding=KV "${key}" "${tmp}"`, { stdio: 'inherit', cwd: path.dirname(fileURLToPath(import.meta.url)) });
+  execSync(`npx wrangler kv key put --binding=KV "${key}" --path "${tmp}" --remote`, { stdio: 'inherit', cwd: path.dirname(fileURLToPath(import.meta.url)) });
   unlinkSync(tmp);
 }
 console.log('同步完成');

@@ -70,8 +70,11 @@ TOKEN="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+
 API_KEY="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.apiKey||'')}catch{}})" 2>/dev/null || true)"
 DOMAIN="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.domain||'')}catch{}})" 2>/dev/null || true)"
 MODEL="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.model||'')}catch{}})" 2>/dev/null || true)"
+AUTO_APPROVE="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.autoApprove?1:0)}catch{console.log(0)}})" 2>/dev/null || true)"
+[[ -n "$AUTO_APPROVE" ]] || AUTO_APPROVE=0
 [[ -n "$TOKEN" ]] || { echo '错误：bootstrap 未返回 token（面板里填了吗？）' >&2; exit 1; }
 echo "    域名: ${DOMAIN:-（未配置）}"
+echo "    自动批准: $([ "$AUTO_APPROVE" = 1 ] && echo '开启（工具/命令自动允许）' || echo '关闭（每步确认）')"
 
 # 应用模型配置：写入容器 settings.json 的 current_model（面板/环境变量 MODEL 均可覆盖）
 if [[ -n "${MODEL:-$HUAWEI_GLM_MODEL}" ]]; then
@@ -105,6 +108,7 @@ nohup env \
   LOCAL_PROXY_API_KEY="$API_KEY" \
   HOST=0.0.0.0 PORT="$PROXY_PORT" \
   HWCLOUD_BIN="$HWCLOUD_BIN" \
+  ACP_AUTO_APPROVE="$AUTO_APPROVE" \
   "$NODE_BIN" "$PROXY_DIR/aishell-acp-openai-proxy.mjs" \
   >"$PROXY_DIR/proxy.log" 2>&1 &
 sleep 2

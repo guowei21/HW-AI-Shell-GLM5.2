@@ -155,6 +155,17 @@ input:focus{outline:2px solid rgba(47,111,237,.25);border-color:var(--accent)}
       模型列表来自容器 <code>/root/.huawei/hwcloud/settings.json</code> 探测结果。</p>
   </section>
 
+  <!-- 自动批准 -->
+  <section class="card">
+    <h2>自动批准 <span class="tag">容器操作</span></h2>
+    <label class="check"><input type="checkbox" id="autoApproveChk"> 自动批准容器内的工具/命令执行请求（不再每步询问）</label>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="saveAutoApproveBtn">保存</button>
+    </div>
+    <p class="hint">开启后，hwcloud 发起的权限请求（如执行 shell 命令、读写文件）会被代理自动选择"允许一次"，
+      适合自动化/脚本场景；关闭则每步需人工确认（更安全）。保存后需在容器重跑部署命令生效。</p>
+  </section>
+
   <!-- 容器部署 -->
   <section class="card">
     <h2>AI Shell 容器部署命令</h2>
@@ -346,6 +357,7 @@ async function refresh() {
   $('domain').value = d.domain || '';
   $('apiKeyShow').textContent = d.apiKey || '—';
   if (d.model) $('modelSel').value = d.model;
+  $('autoApproveChk').checked = !!d.autoApprove;
   // SSH 连接信息
   $('sshCard').style.display = '';
   $('sshForward').textContent = 'cloudflared access ssh --hostname ssh.912219735.xyz --url localhost:2222';
@@ -411,6 +423,11 @@ $('saveModelBtn').onclick = async () => {
   const m = $('modelSel').value;
   const r = await api('/api/config', { method: 'POST', body: JSON.stringify({ model: m }) });
   if (r) { setMsg(m ? ('模型已保存：' + m + '（容器重跑部署命令生效）') : '模型已清空（恢复容器默认）'); refresh(); }
+};
+$('saveAutoApproveBtn').onclick = async () => {
+  const v = $('autoApproveChk').checked;
+  const r = await api('/api/config', { method: 'POST', body: JSON.stringify({ autoApprove: v }) });
+  if (r) { setMsg(v ? '已开启自动批准（容器重跑部署命令生效）' : '已关闭自动批准（容器重跑部署命令生效）'); refresh(); }
 };
 
 // 初始化：已有会话 token 直接进面板；否则查是否首次（需要先设置管理密码）

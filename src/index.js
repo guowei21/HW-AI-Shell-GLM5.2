@@ -109,8 +109,8 @@ export default {
     }
 
     if (method === 'GET' && path === '/api/status') {
-      const [domain, token, apiKey, heartbeatRaw, sshKey, model] = await Promise.all([
-        KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'), KV.get('ssh_key'), KV.get('model'),
+      const [domain, token, apiKey, heartbeatRaw, sshKey, model, autoApprove] = await Promise.all([
+        KV.get('domain'), KV.get('token'), KV.get('api_key'), KV.get('heartbeat'), KV.get('ssh_key'), KV.get('model'), KV.get('auto_approve'),
       ]);
       let heartbeat = null;
       if (heartbeatRaw) { try { heartbeat = JSON.parse(heartbeatRaw); } catch { heartbeat = null; } }
@@ -120,6 +120,7 @@ export default {
         apiKey: apiKey || '',
         sshKey: sshKey || '',
         model: model || '',
+        autoApprove: autoApprove === '1',
         heartbeat,
       });
     }
@@ -132,17 +133,18 @@ export default {
       if (body.apiKey !== undefined) ops.push(KV.put('api_key', String(body.apiKey).trim()));
       if (body.sshKey !== undefined) ops.push(KV.put('ssh_key', String(body.sshKey)));
       if (body.model !== undefined) ops.push(KV.put('model', String(body.model).trim()));
+      if (body.autoApprove !== undefined) ops.push(KV.put('auto_approve', body.autoApprove ? '1' : '0'));
       await Promise.all(ops);
       return json({ ok: true });
     }
 
     // 容器端拉取全量配置（bootstrap）
     if (method === 'GET' && path === '/api/bootstrap') {
-      const [token, domain, apiKey, model] = await Promise.all([
-        KV.get('token'), KV.get('domain'), KV.get('api_key'), KV.get('model'),
+      const [token, domain, apiKey, model, autoApprove] = await Promise.all([
+        KV.get('token'), KV.get('domain'), KV.get('api_key'), KV.get('model'), KV.get('auto_approve'),
       ]);
       if (!token) return json({ ok: false, error: 'tunnel token 未配置，请先在面板填写' }, 400);
-      return json({ ok: true, token, domain: domain || '', apiKey: apiKey || '', model: model || '' });
+      return json({ ok: true, token, domain: domain || '', apiKey: apiKey || '', model: model || '', autoApprove: autoApprove === '1' });
     }
 
     // 容器心跳上报

@@ -97,7 +97,13 @@ heartbeat() {
     -d "{\"upstream\":$up,\"models\":$models_json,\"tunnel\":$tun,\"host\":\"$(hostname)\"}" \
     "$WORKER_URL/api/heartbeat" >/dev/null 2>&1 || true
 }
+# 清理旧心跳循环（防重复部署后残留双循环写 KV）
+if [ -f "$PROXY_DIR/heartbeat.pid" ]; then
+  kill "$(cat "$PROXY_DIR/heartbeat.pid" 2>/dev/null)" 2>/dev/null || true
+  rm -f "$PROXY_DIR/heartbeat.pid"
+fi
 while true; do heartbeat; sleep "$HEARTBEAT_INTERVAL"; done &
+echo $! > "$PROXY_DIR/heartbeat.pid"
 echo
 echo '================ 部署完成 ================'
 echo "代理:  http://127.0.0.1:$PROXY_PORT/v1"

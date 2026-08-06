@@ -29,6 +29,13 @@ if [[ -z "$WORKER_URL" || -z "$ADMIN_KEY" ]]; then
 fi
 AUTH=(-H "X-Admin-Key: $ADMIN_KEY")
 
+# 1. 清理残留进程（防旧版本心跳循环/代理/隧道覆盖心跳数据）
+pkill -f "sleep ${HEARTBEAT_INTERVAL}" 2>/dev/null || true   # 旧心跳循环在 sleep 状态
+pkill -f 'aishell-acp-openai-proxy.mjs' 2>/dev/null || true
+pkill -f 'cloudflared tunnel run' 2>/dev/null || true
+rm -f "$PROXY_DIR/heartbeat.pid" 2>/dev/null || true
+sleep 1   # 给旧进程一点时间退出
+
 echo '==> 1/5 拉取配置'
 CONFIG="$(curl -fsSL "${AUTH[@]}" "$WORKER_URL/api/bootstrap")"
 TOKEN="$(echo "$CONFIG" | "$NODE_BIN" -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const o=JSON.parse(d);console.log(o.token||'')}catch{}})" 2>/dev/null || true)"

@@ -312,7 +312,8 @@ async function refresh() {
   if (hb && hb.ts) {
     $('hbTime').textContent = '心跳 ' + new Date(hb.ts).toLocaleTimeString();
     const up = hb.upstream;
-    $('upstream').innerHTML = up && up.online
+    const upOnline = up && (up.online || up.status === 'ok' || up.status === 200);
+    $('upstream').innerHTML = upOnline
       ? '<span class="pill ok">在线</span>' + (up.version ? ' v' + up.version : '')
       : '<span class="pill bad">离线</span>';
     $('models').textContent = (hb.models && hb.models.length) ? hb.models.join(', ') : '—';

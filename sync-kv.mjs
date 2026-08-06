@@ -17,7 +17,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// sync-kv.mjs 位于仓库根：ROOT 就是本文件所在目录（本地与 CI 的 repo 根一致）
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const TOML = path.join(ROOT, 'wrangler.toml');
 const KV_PLACEHOLDER = 'REPLACE_WITH_KV_NAMESPACE_ID';
 

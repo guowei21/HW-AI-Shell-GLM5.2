@@ -10,16 +10,44 @@
 - **配置存 KV** - 部署脚本经 Worker 分发，容器状态心跳实时上报
 - **一键部署** - AI Shell 容器内执行一行命令，自动完成代理部署 + Cloudflare Tunnel 穿透
 
-## 部署（一键）
+## 部署
+
+实测推荐**本地 wrangler 一键部署**（几分钟完成），也可用 Cloudflare 一键按钮或 Dashboard 连接 Git。
+详细步骤与踩坑记录见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+
+### 方式一：本地 wrangler 一键部署（实测成功 ✅）
+
+```bash
+# 1. 安装依赖（项目根目录）
+npm install
+
+# 2. 配置凭据（Cloudflare API Token，权限需含 Workers Scripts Edit + KV Storage Edit）
+export CLOUDFLARE_API_TOKEN=<你的API Token>
+export CLOUDFLARE_ACCOUNT_ID=<你的账户ID>     # Dashboard 右侧 Account ID
+
+# 3. 创建 KV namespace（只需一次），把输出的 id 填入 wrangler.toml
+npx wrangler kv namespace create KV
+#    输出形如 id = "xxxx..." → 替换 wrangler.toml 里的 id = "..."
+
+# 4. 设置面板登录密钥 ADMIN_KEY（只需一次，自定义强随机值）
+npx wrangler secret put ADMIN_KEY
+
+# 5. 一键部署（自动：上传面板/代理源码/部署脚本到 KV → 部署 Worker）
+npm run deploy
+```
+
+部署完成，面板地址：
+
+```
+https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev
+```
+
+### 方式二：Cloudflare 一键按钮（可选）
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/guowei21/HW-AI-Shell-GLM5.2)
 
-> 详细步骤见 [docs/DEPLOY.md](docs/DEPLOY.md)。
-
-1. 点击上方按钮，登录 Cloudflare 账号；
-2. 选择账户，点击 **Deploy**；
-3. 按提示设置 `ADMIN_KEY`（面板登录密钥，自定义、保密）；
-4. 部署完成，打开面板 `https://hw-ai-shell-glm5-2.<ACCOUNT_ID>.workers.dev`。
+> ⚠️ `workers.dev` 域名在国内直连不稳定，建议在 Dashboard → Worker → Settings → Domains & Routes
+> 绑定自定义域名后访问面板。
 
 ## 使用
 
@@ -43,7 +71,7 @@ aishell-acp-openai-proxy.mjs    # 代理源码（经 Worker 分发到容器）
 src/index.js                    # Worker：登录鉴权/KV/心跳/bootstrap/脚本分发
 src/admin.html                  # WebUI 面板
 src/deploy-remote.sh            # 容器端一键部署
-sync-kv.mjs                     # 上传脚本到 KV
+sync-kv.mjs                     # 上传脚本到 KV（含自动创建 KV、--remote/--path 修正）
 wrangler.toml / package.json    # Worker 配置文件
 ```
 

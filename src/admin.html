@@ -267,14 +267,20 @@ function copyText(id) {
 }
 
 // 复制容器部署命令：自动用当前管理密码替换占位符 ADMIN_KEY
-function copyDeployCmd() {
+// 密码来源：登录/设置/改密时存入 sessionStorage；若没有则弹窗输入一次并记住
+async function copyDeployCmd() {
   const el = $('deployCmdText');
   let cmd = el.textContent;
   if (!cmd || cmd === '—') { setMsg('请先保存域名/token 后刷新本页', 'bad'); return; }
-  const key = sessionStorage.getItem('admin_key') || '';
-  const final = key ? cmd.replace('<部署时的ADMIN_KEY>', key) : cmd;
+  let key = sessionStorage.getItem('admin_key') || '';
+  if (!key) {
+    key = (prompt('请输入当前管理密码（用于生成容器部署命令）：') || '').trim();
+    if (!key) { setMsg('已取消复制', 'bad'); return; }
+    sessionStorage.setItem('admin_key', key);
+  }
+  const final = cmd.replace('<部署时的ADMIN_KEY>', key);
   navigator.clipboard.writeText(final).then(
-    () => setMsg(key ? '已复制（ADMIN_KEY 已自动填入）' : '已复制（未登录会话，请手动替换 ADMIN_KEY）'),
+    () => setMsg('已复制（ADMIN_KEY 已自动填入）'),
     () => setMsg('复制失败，请手动复制', 'bad')
   );
 }
